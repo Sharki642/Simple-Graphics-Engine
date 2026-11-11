@@ -1,5 +1,5 @@
 #include <SDL2/SDL.h>
-
+#include <algorithm>
 
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
@@ -16,7 +16,7 @@ Triangle makeTriangle(){
     Triangle t;
     t.a = {100, 100};
     t.b = {200, 100};
-    t.c = {150, 200};
+    t.c = {150, 400};
     return t;
 }
 
@@ -43,9 +43,16 @@ void drawPointofTriangle(SDL_Renderer* renderer, int px, int py, const Triangle&
 }
 
 void drawTriangle(SDL_Renderer* renderer, const Triangle& t){
+
+    int minx = std::min({t.a.x, t.b.x, t.c.x});
+    int maxx = std::max({t.a.x, t.b.x, t.c.x});
+
+    int miny = std::min({t.a.y, t.b.y, t.c.y});
+    int maxy = std::max({t.a.y, t.b.y, t.c.y});
+
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    for (int y = 0; y < SCREEN_HEIGHT; y++) {
-        for (int x = 0; x < SCREEN_WIDTH; x++) {
+    for (int y = miny; y <= maxy; y++) {
+        for (int x = minx; x <= maxx; x++) {
             drawPointofTriangle(renderer, x, y, t);
         }
     }
