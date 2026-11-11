@@ -1,5 +1,9 @@
 #include <SDL2/SDL.h>
 #include <algorithm>
+#include <iostream>
+#include <imgui.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdlrenderer2.h>
 
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
@@ -63,24 +67,47 @@ int main(){
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window* window = SDL_CreateWindow("Graphics Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
-
+    ImGui::CreateContext();
+    ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+    ImGui_ImplSDLRenderer2_Init(renderer);
     Triangle tri = makeTriangle();
     SDL_Event e;
     bool quit = false;
     while (!quit) {
         while (SDL_PollEvent(&e)) {
+            ImGui_ImplSDL2_ProcessEvent(&e);
             if (e.type == SDL_QUIT) {
                 quit = true;
             }
         }
+        ImGui_ImplSDL2_NewFrame();
+        ImGui_ImplSDLRenderer2_NewFrame();
+        ImGui::NewFrame();
+
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
         drawTriangle(renderer, tri);
 
+        ImGui::Begin("TRIANGLE");
+        ImGui::SliderFloat("A.x", &tri.a.x, 0.0f, SCREEN_WIDTH);
+        ImGui::SliderFloat("A.y", &tri.a.y, 0.0f, SCREEN_HEIGHT);
+        ImGui::SliderFloat("B.x", &tri.b.x, 0.0f, SCREEN_WIDTH);
+        ImGui::SliderFloat("B.y", &tri.b.y, 0.0f, SCREEN_HEIGHT);
+        ImGui::SliderFloat("C.x", &tri.c.x, 0.0f, SCREEN_WIDTH);
+        ImGui::SliderFloat("C.y", &tri.c.y, 0.0f, SCREEN_HEIGHT);
+        ImGui::End();
+        ImGui::Render();
+
+
+        ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+
         SDL_RenderPresent(renderer);
     }
 
+    ImGui_ImplSDLRenderer2_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
