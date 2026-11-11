@@ -91,6 +91,11 @@ int main(){
 
         ImGui::Begin("TRIANGLE");
         ImGui::SliderFloat("A.x", &tri.a.x, 0.0f, SCREEN_WIDTH);
+        ImGui::SliderFloat("A.y", &tri.a.y, 0.0f, SCREEN_HEIGHT);
+        ImGui::SliderFloat("B.x", &tri.b.x, 0.0f, SCREEN_WIDTH);
+        ImGui::SliderFloat("B.y", &tri.b.y, 0.0f, SCREEN_HEIGHT);
+        ImGui::SliderFloat("C.x", &tri.c.x, 0.0f, SCREEN_WIDTH);
+        ImGui::SliderFloat("C.y", &tri.c.y, 0.0f, SCREEN_HEIGHT);
         ImGui::End();
         ImGui::Render();
 
