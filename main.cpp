@@ -65,7 +65,7 @@ void drawTriangle(SDL_Renderer* renderer, const Triangle& t){
 
 int main(){
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_Window* window = SDL_CreateWindow("Graphics Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+    SDL_Window* window = SDL_CreateWindow("Bruno's Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
     ImGui::CreateContext();
     ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
@@ -89,7 +89,7 @@ int main(){
 
         drawTriangle(renderer, tri);
 
-        ImGui::Begin("TRIANGLE");
+        ImGui::Begin("Points of Triangle");
         ImGui::SliderFloat("A.x", &tri.a.x, 0.0f, SCREEN_WIDTH);
         ImGui::SliderFloat("A.y", &tri.a.y, 0.0f, SCREEN_HEIGHT);
         ImGui::SliderFloat("B.x", &tri.b.x, 0.0f, SCREEN_WIDTH);
