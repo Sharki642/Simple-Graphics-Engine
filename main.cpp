@@ -1,3 +1,6 @@
+// compile: g++ main.cpp imgui/imgui*.cpp imgui/backends/imgui_impl_sdl2.cpp imgui/backends/imgui_impl_sdlrenderer2.cpp -Iimgui -Iimgui/backends $(sdl2-config --cflags --libs) -o main
+// run: ./main
+
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include <iostream>
@@ -19,8 +22,8 @@ struct Triangle {
 Triangle makeTriangle(){
     Triangle t;
     t.a = {100, 100};
-    t.b = {200, 100};
-    t.c = {150, 400};
+    t.b = {200, 200};
+    t.c = {400, 400};
     return t;
 }
 
