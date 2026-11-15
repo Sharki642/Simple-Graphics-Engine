@@ -65,6 +65,7 @@ void drawTriangle(SDL_Renderer* renderer, const Triangle& t){
     }
 }
 
+enum class Shape { None, Triangle, Circle };
 
 int main(){
     SDL_Init(SDL_INIT_VIDEO);
@@ -74,6 +75,7 @@ int main(){
     ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
     ImGui_ImplSDLRenderer2_Init(renderer);
     Triangle tri = makeTriangle();
+    Shape currentShape = Shape::None;
     SDL_Event e;
     bool quit = false;
     while (!quit) {
@@ -90,16 +92,39 @@ int main(){
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        drawTriangle(renderer, tri);
+        if (currentShape == Shape::Triangle) {
+            drawTriangle(renderer, tri);
+        } else if (currentShape == Shape::Circle) {
+          // TODO: drawCircle(renderer, circle);  (you'll write this later)
+        }
 
-        ImGui::Begin("Points of Triangle");
-        ImGui::SliderFloat("A.x", &tri.a.x, 0.0f, SCREEN_WIDTH);
-        ImGui::SliderFloat("A.y", &tri.a.y, 0.0f, SCREEN_HEIGHT);
-        ImGui::SliderFloat("B.x", &tri.b.x, 0.0f, SCREEN_WIDTH);
-        ImGui::SliderFloat("B.y", &tri.b.y, 0.0f, SCREEN_HEIGHT);
-        ImGui::SliderFloat("C.x", &tri.c.x, 0.0f, SCREEN_WIDTH);
-        ImGui::SliderFloat("C.y", &tri.c.y, 0.0f, SCREEN_HEIGHT);
-        ImGui::End();
+
+        ImGui::Begin("Shapes");
+
+if (ImGui::Button("Triangle")) {
+    currentShape = Shape::Triangle;
+}
+ImGui::SameLine();               
+if (ImGui::Button("Circle")) {
+    currentShape = Shape::Circle;
+}
+
+
+if (currentShape == Shape::Triangle) {
+    ImGui::Separator();
+    ImGui::SliderFloat("A.x", &tri.a.x, 0.0f, SCREEN_WIDTH);
+    ImGui::SliderFloat("A.y", &tri.a.y, 0.0f, SCREEN_HEIGHT);
+    ImGui::SliderFloat("B.x", &tri.b.x, 0.0f, SCREEN_WIDTH);
+    ImGui::SliderFloat("B.y", &tri.b.y, 0.0f, SCREEN_HEIGHT);
+    ImGui::SliderFloat("C.x", &tri.c.x, 0.0f, SCREEN_WIDTH);
+    ImGui::SliderFloat("C.y", &tri.c.y, 0.0f, SCREEN_HEIGHT);
+} else if (currentShape == Shape::Circle) {
+    ImGui::Separator();
+    ImGui::Text("Circle not implemented yet");
+}
+
+ImGui::End();
+
         ImGui::Render();
 
 
