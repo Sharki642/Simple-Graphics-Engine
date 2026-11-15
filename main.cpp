@@ -19,12 +19,24 @@ struct Triangle {
     Point a, b, c;
 };
 
+struct Circle {
+    Point center;
+    float radius;
+};
+
 Triangle makeTriangle(){
     Triangle t;
     t.a = {100, 100};
     t.b = {200, 200};
     t.c = {400, 400};
     return t;
+}
+
+Circle makeCircle(){
+    Circle c;
+    c.center = {400, 300};
+    c.radius = 100;
+    return c;
 }
 
 bool checkTriangle(const Triangle& t, float px, float py){
@@ -43,8 +55,20 @@ bool checkTriangle(const Triangle& t, float px, float py){
     return alpha >= 0 && beta >= 0 && gamma >= 0;
 }
 
+bool checkCircle(const Circle& c, float px, float py){
+    float dx = px - c.center.x;
+    float dy = py - c.center.y;
+    return (dx * dx + dy * dy) <= (c.radius * c.radius);
+}
+
 void drawPointofTriangle(SDL_Renderer* renderer, int px, int py, const Triangle& t) {
     if (checkTriangle(t, px, py)) {
+        SDL_RenderDrawPoint(renderer, px, py);
+    }
+}
+
+void drawPointofCircle(SDL_Renderer* renderer, int px, int py, const Circle& c) {
+    if (checkCircle(c, px, py)) {
         SDL_RenderDrawPoint(renderer, px, py);
     }
 }
@@ -65,6 +89,20 @@ void drawTriangle(SDL_Renderer* renderer, const Triangle& t){
     }
 }
 
+void drawCircle(SDL_Renderer* renderer, const Circle& c) {
+    int minx = c.center.x - c.radius;
+    int maxx = c.center.x + c.radius;
+    int miny = c.center.y - c.radius;
+    int maxy = c.center.y + c.radius;
+
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+    for (int y = miny; y <= maxy; y++) {
+        for (int x = minx; x <= maxx; x++) {
+            drawPointofCircle(renderer, x, y, c);
+        }
+    }
+}
+
 enum class Shape { None, Triangle, Circle };
 
 int main(){
@@ -75,6 +113,7 @@ int main(){
     ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
     ImGui_ImplSDLRenderer2_Init(renderer);
     Triangle tri = makeTriangle();
+    Circle circle = makeCircle();
     Shape currentShape = Shape::None;
     SDL_Event e;
     bool quit = false;
@@ -95,7 +134,7 @@ int main(){
         if (currentShape == Shape::Triangle) {
             drawTriangle(renderer, tri);
         } else if (currentShape == Shape::Circle) {
-          // TODO: drawCircle(renderer, circle);  (you'll write this later)
+            drawCircle(renderer, circle);
         }
 
 
