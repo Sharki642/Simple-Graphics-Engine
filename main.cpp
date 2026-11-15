@@ -159,8 +159,11 @@ if (currentShape == Shape::Triangle) {
     ImGui::SliderFloat("C.y", &tri.c.y, 0.0f, SCREEN_HEIGHT);
 } else if (currentShape == Shape::Circle) {
     ImGui::Separator();
-    ImGui::Text("Circle not implemented yet");
+    ImGui::SliderFloat("Center X", &circle.center.x, 0.0f, SCREEN_WIDTH);
+    ImGui::SliderFloat("Center Y", &circle.center.y, 0.0f, SCREEN_HEIGHT);
+    ImGui::SliderFloat("Radius",   &circle.radius,   1.0f, 300.0f);
 }
+
 
 ImGui::End();
 
