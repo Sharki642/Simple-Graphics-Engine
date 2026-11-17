@@ -11,12 +11,22 @@
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
 
+//2d screen
 struct Point {
     float x, y;
 };
 
+//3d point
+struct Point3 {
+    float x, y, z;
+};
+
 struct Triangle {
     Point a, b, c;
+};
+
+struct Triangle3 {
+    Point3 a, b, c;
 };
 
 struct Circle {
@@ -24,19 +34,49 @@ struct Circle {
     float radius;
 };
 
-Triangle makeTriangle(){
-    Triangle t;
-    t.a = {100, 100};
-    t.b = {200, 200};
-    t.c = {400, 400};
+//3d circle
+struct Circle3 {
+    Point3 center;
+    float radius;
+};
+
+struct Camera {
+    Point3 pos = {0, 0, 0};
+    float speed = 3.0f;   // world units per second
+    float f = 400.0f;     // focal length: distance eye to screen 
+};
+
+Triangle3 makeTriangle(){
+    Triangle3 t;
+    // 5 units in front of the camera
+    t.a = {-1, -1, 5};
+    t.b = { 1, -1, 5};
+    t.c = { 0,  1, 5};
     return t;
 }
 
-Circle makeCircle(){
-    Circle c;
-    c.center = {400, 300};
-    c.radius = 100;
+Circle3 makeCircle(){
+    Circle3 c;
+    c.center = {0, 0, 5};
+    c.radius = 1;
     return c;
+}
+
+bool project(const Point3& p, const Camera& cam, Point& out){
+    //(world - camera)
+    float x = p.x - cam.pos.x;
+    float y = p.y - cam.pos.y;
+    float z = p.z - cam.pos.z;
+
+    //(division by 0 / mirrored image)
+    if (z <= 0.1f) return false;
+
+    //(similar triangles: screen / f = world / z)
+    //    + half the screen size moves (0,0) to the middle of the window
+    //    y is negated because in SDL y points down, but we want +y = up
+    out.x =  (x / z) * cam.f + SCREEN_WIDTH  / 2.0f;
+    out.y = -(y / z) * cam.f + SCREEN_HEIGHT / 2.0f;
+    return true;
 }
 
 bool checkTriangle(const Triangle& t, float px, float py){
@@ -73,13 +113,12 @@ void drawPointofCircle(SDL_Renderer* renderer, int px, int py, const Circle& c) 
     }
 }
 
+
 void drawTriangle(SDL_Renderer* renderer, const Triangle& t){
-
-    int minx = std::min({t.a.x, t.b.x, t.c.x});
-    int maxx = std::max({t.a.x, t.b.x, t.c.x});
-
-    int miny = std::min({t.a.y, t.b.y, t.c.y});
-    int maxy = std::max({t.a.y, t.b.y, t.c.y});
+    int minx = std::max(0,                 (int)std::min({t.a.x, t.b.x, t.c.x}));
+    int maxx = std::min(SCREEN_WIDTH - 1,  (int)std::max({t.a.x, t.b.x, t.c.x}));
+    int miny = std::max(0,                 (int)std::min({t.a.y, t.b.y, t.c.y}));
+    int maxy = std::min(SCREEN_HEIGHT - 1, (int)std::max({t.a.y, t.b.y, t.c.y}));
 
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     for (int y = miny; y <= maxy; y++) {
@@ -89,11 +128,20 @@ void drawTriangle(SDL_Renderer* renderer, const Triangle& t){
     }
 }
 
+// Projects it to 2d screen
+void drawTriangle3(SDL_Renderer* renderer, const Triangle3& world, const Camera& cam){
+    Triangle t;
+    if (!project(world.a, cam, t.a)) return;
+    if (!project(world.b, cam, t.b)) return;
+    if (!project(world.c, cam, t.c)) return;
+    drawTriangle(renderer, t);
+}
+
 void drawCircle(SDL_Renderer* renderer, const Circle& c) {
-    int minx = c.center.x - c.radius;
-    int maxx = c.center.x + c.radius;
-    int miny = c.center.y - c.radius;
-    int maxy = c.center.y + c.radius;
+    int minx = std::max(0,                 (int)(c.center.x - c.radius));
+    int maxx = std::min(SCREEN_WIDTH - 1,  (int)(c.center.x + c.radius));
+    int miny = std::max(0,                 (int)(c.center.y - c.radius));
+    int maxy = std::min(SCREEN_HEIGHT - 1, (int)(c.center.y + c.radius));
 
     SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
     for (int y = miny; y <= maxy; y++) {
@@ -101,6 +149,14 @@ void drawCircle(SDL_Renderer* renderer, const Circle& c) {
             drawPointofCircle(renderer, x, y, c);
         }
     }
+}
+
+void drawCircle3(SDL_Renderer* renderer, const Circle3& world, const Camera& cam) {
+    Circle c;
+    if (!project(world.center, cam, c.center)) return;
+    float z = world.center.z - cam.pos.z;
+    c.radius = (world.radius / z) * cam.f;
+    drawCircle(renderer, c);
 }
 
 enum class Shape { None, Triangle, Circle };
@@ -112,11 +168,13 @@ int main(){
     ImGui::CreateContext();
     ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
     ImGui_ImplSDLRenderer2_Init(renderer);
-    Triangle tri = makeTriangle();
-    Circle circle = makeCircle();
+    Triangle3 tri = makeTriangle();
+    Circle3 circle = makeCircle();
+    Camera cam;
     Shape currentShape = Shape::None;
     SDL_Event e;
     bool quit = false;
+    Uint64 lastTime = SDL_GetTicks64();
     while (!quit) {
         while (SDL_PollEvent(&e)) {
             ImGui_ImplSDL2_ProcessEvent(&e);
@@ -124,17 +182,34 @@ int main(){
                 quit = true;
             }
         }
+
+        // time since last frame in seconds -> movement speed independent of FPS
+        Uint64 now = SDL_GetTicks64();
+        float dt = (now - lastTime) / 1000.0f;
+        lastTime = now;
+
         ImGui_ImplSDL2_NewFrame();
         ImGui_ImplSDLRenderer2_NewFrame();
         ImGui::NewFrame();
+
+        // camera movement (only if ImGui doesn't need the keyboard, e.g. typing in a field)
+        if (!ImGui::GetIO().WantCaptureKeyboard) {
+            const Uint8* keys = SDL_GetKeyboardState(nullptr);
+            if (keys[SDL_SCANCODE_W])      cam.pos.z += cam.speed * dt; // forward
+            if (keys[SDL_SCANCODE_S])      cam.pos.z -= cam.speed * dt; // back
+            if (keys[SDL_SCANCODE_A])      cam.pos.x -= cam.speed * dt; // left
+            if (keys[SDL_SCANCODE_D])      cam.pos.x += cam.speed * dt; // right
+            if (keys[SDL_SCANCODE_SPACE])  cam.pos.y += cam.speed * dt; // up
+            if (keys[SDL_SCANCODE_LSHIFT]) cam.pos.y -= cam.speed * dt; // down
+        }
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
         if (currentShape == Shape::Triangle) {
-            drawTriangle(renderer, tri);
+            drawTriangle3(renderer, tri, cam);
         } else if (currentShape == Shape::Circle) {
-            drawCircle(renderer, circle);
+            drawCircle3(renderer, circle, cam);
         }
 
 
@@ -143,7 +218,7 @@ int main(){
 if (ImGui::Button("Triangle")) {
     currentShape = Shape::Triangle;
 }
-ImGui::SameLine();               
+ImGui::SameLine();
 if (ImGui::Button("Circle")) {
     currentShape = Shape::Circle;
 }
@@ -151,18 +226,19 @@ if (ImGui::Button("Circle")) {
 
 if (currentShape == Shape::Triangle) {
     ImGui::Separator();
-    ImGui::SliderFloat("A.x", &tri.a.x, 0.0f, SCREEN_WIDTH);
-    ImGui::SliderFloat("A.y", &tri.a.y, 0.0f, SCREEN_HEIGHT);
-    ImGui::SliderFloat("B.x", &tri.b.x, 0.0f, SCREEN_WIDTH);
-    ImGui::SliderFloat("B.y", &tri.b.y, 0.0f, SCREEN_HEIGHT);
-    ImGui::SliderFloat("C.x", &tri.c.x, 0.0f, SCREEN_WIDTH);
-    ImGui::SliderFloat("C.y", &tri.c.y, 0.0f, SCREEN_HEIGHT);
+    ImGui::SliderFloat3("A", &tri.a.x, -10.0f, 10.0f);
+    ImGui::SliderFloat3("B", &tri.b.x, -10.0f, 10.0f);
+    ImGui::SliderFloat3("C", &tri.c.x, -10.0f, 10.0f);
 } else if (currentShape == Shape::Circle) {
     ImGui::Separator();
-    ImGui::SliderFloat("Center X", &circle.center.x, 0.0f, SCREEN_WIDTH);
-    ImGui::SliderFloat("Center Y", &circle.center.y, 0.0f, SCREEN_HEIGHT);
-    ImGui::SliderFloat("Radius",   &circle.radius,   1.0f, 300.0f);
+    ImGui::SliderFloat3("Center", &circle.center.x, -10.0f, 10.0f);
+    ImGui::SliderFloat("Radius",  &circle.radius,   0.1f, 5.0f);
 }
+
+ImGui::Separator();
+ImGui::Text("Camera (WASD, Space, Shift)");
+ImGui::SliderFloat3("Position", &cam.pos.x, -10.0f, 10.0f);
+ImGui::SliderFloat("Focal length", &cam.f, 100.0f, 1000.0f);
 
 
 ImGui::End();
