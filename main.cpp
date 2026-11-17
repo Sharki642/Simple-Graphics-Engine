@@ -192,7 +192,7 @@ int main(){
         ImGui_ImplSDLRenderer2_NewFrame();
         ImGui::NewFrame();
 
-        // camera movement
+        // camera movement (only if ImGui doesn't need the keyboard, e.g. typing in a field)
         if (!ImGui::GetIO().WantCaptureKeyboard) {
             const Uint8* keys = SDL_GetKeyboardState(nullptr);
             if (keys[SDL_SCANCODE_W])      cam.pos.z += cam.speed * dt; // forward
@@ -234,6 +234,12 @@ if (currentShape == Shape::Triangle) {
     ImGui::SliderFloat3("Center", &circle.center.x, -10.0f, 10.0f);
     ImGui::SliderFloat("Radius",  &circle.radius,   0.1f, 5.0f);
 }
+
+ImGui::Separator();
+ImGui::Text("Camera (WASD, Space, Shift)");
+ImGui::SliderFloat3("Position", &cam.pos.x, -10.0f, 10.0f);
+ImGui::SliderFloat("Focal length", &cam.f, 100.0f, 1000.0f);
+
 
 ImGui::End();
 
